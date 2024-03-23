@@ -20,24 +20,13 @@ const generateEmployees = () => {
   }
   return employees;
 };
-const generateRandomDepartmentName = () => {
-  const departmentNames = [
-    '경영지원팀', '영업부', '기술개발팀', '인사팀', '재무팀',
-    '마케팅부', '생산관리팀', '구매팀', '품질관리팀', '물류팀',
-    '서비스센터', '보안팀', '시스템운영팀', '개발부', '디자인팀',
-    '법무팀', '연구소', '글로벌마케팅팀', '고객응대팀', '자재팀',
-    '산업기술연구소', '시스템통합팀', '정보보안팀', '인프라운영팀', '데이터분석팀',
-    '상품기획팀', '디지털마케팅팀', '금융사업팀', '해외영업팀', '통신망운영팀'
-  ];
-  return departmentNames[Math.floor(Math.random() * departmentNames.length)];
-};
 
 const generateDepartments = (depth, numDepartments) => {
   if (depth === 0) return [];
   const departments = [];
   for (let i = 0; i < numDepartments; i++) {
     const department = {
-      name: generateRandomDepartmentName(),
+      name: `Department ${i+1}`,
       employees: generateEmployees(),
       subDepartments: generateDepartments(depth - 1, numDepartments),
       checked: false,
@@ -51,7 +40,6 @@ const generateDepartments = (depth, numDepartments) => {
 // Main App component
 const App = () => {
   const [selectedEmployees, setSelectedEmployees] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
   const [rootDepartment, setRootDepartment] = useState({
     name: 'ROOT',
     employees: generateEmployees(),
@@ -99,50 +87,9 @@ const App = () => {
       return acc;
     }, []);
   };
-const handleSearch = () => {
-  searchDepartments(rootDepartment, searchQuery.toLowerCase());
-  
-  const selectedDepartments = getSelectedDepartments(rootDepartment);
-  const employees = getEmployeesFromDepartments(selectedDepartments);
-  
-  setSelectedEmployees(employees); // 검색 결과에 따라 선택된 부서의 직원만 조회하여 설정
-expandAllDepartments(rootDepartment); // 검색 후 모든 부서를 펼치도록 설정
-};
-const expandAllDepartments = (department) => {
-  department.expanded = true;
-  department.subDepartments.forEach((subDepartment) =>
-    expandAllDepartments(subDepartment)
-  );
-};
-
-  const searchDepartments = (department, query) => {
-    if (department.name.toLowerCase().includes(query)) {
-      department.checked = true;
-      department.expanded = true;
-    } else {
-      department.checked = false;
-    }
-    department.subDepartments.forEach((subDepartment) =>
-      searchDepartments(subDepartment, query)
-    );
-  };
 
   return (
     <div>
-      <div style={{ marginBottom: '10px' }}>
-<input
-  type="text"
-  value={searchQuery}
-  onChange={(e) => setSearchQuery(e.target.value)}
-  onKeyPress={(e) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  }}
-  placeholder="부서 검색"
-/>
-        <button onClick={handleSearch}>검색</button>
-      </div>
       <div style={{ float: 'left', width: '50%' }}>
         <h2>조직도</h2>
         <DepartmentTree
@@ -165,23 +112,18 @@ const expandAllDepartments = (department) => {
 const DepartmentTree = ({ department, handleCheckboxChange, handleToggle }) => (
   <ul>
     <li style={{ fontWeight: department.checked ? 'bold' : 'normal' }}>
-      <span>
+      <input
+        type="checkbox"
+        checked={department.checked}
+        onChange={() => handleCheckboxChange(department)}
+      />
+      <span onClick={() => handleToggle(department)}>
         {department.subDepartments.length > 0 && (
-          <span
-            style={{ paddingRight: '5px', cursor: 'pointer' }}
-            onClick={() => handleToggle(department)}
-          >
+          <span style={{ paddingRight: '5px' }}>
             {department.expanded ? '-' : '+'}
           </span>
         )}
-        <input
-          type="checkbox"
-          checked={department.checked}
-          onChange={() => handleCheckboxChange(department)}
-        />
-        <span style={{ cursor: 'pointer' }} onClick={() => handleToggle(department)}>
-          {department.name} ({department.employees.length})
-        </span>
+        {department.name} ({department.employees.length})
       </span>
       {department.expanded && department.subDepartments.length > 0 && (
         <DepartmentTreeList
@@ -195,27 +137,23 @@ const DepartmentTree = ({ department, handleCheckboxChange, handleToggle }) => (
 );
 
 // Component for rendering sub-departments
+// Component for rendering sub-departments
 const DepartmentTreeList = ({ departments, handleCheckboxChange, handleToggle }) => (
   <ul>
     {departments.map((department, index) => (
       <li key={index} style={{ display: 'block' }}>
-        <span>
+        <input
+          type="checkbox"
+          checked={department.checked}
+          onChange={() => handleCheckboxChange(department)}
+        />
+        <span onClick={() => handleToggle(department)}>
           {department.subDepartments.length > 0 && (
-            <span
-              style={{ paddingRight: '5px', cursor: 'pointer' }}
-              onClick={() => handleToggle(department)}
-            >
+            <span style={{ paddingRight: '5px' }}>
               {department.expanded ? '-' : '+'}
             </span>
           )}
-          <input
-            type="checkbox"
-            checked={department.checked}
-            onChange={() => handleCheckboxChange(department)}
-          />
-          <span style={{ cursor: 'pointer' }} onClick={() => handleToggle(department)}>
-            {department.name} ({department.employees.length})
-          </span>
+          {department.name} ({department.employees.length})
         </span>
         {department.expanded && department.subDepartments.length > 0 && (
           <DepartmentTreeList
@@ -228,8 +166,6 @@ const DepartmentTreeList = ({ departments, handleCheckboxChange, handleToggle })
     ))}
   </ul>
 );
-
-
 
 // Component for rendering employee list
 const EmployeeList = ({ employees }) => (

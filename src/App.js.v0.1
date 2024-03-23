@@ -1,0 +1,181 @@
+import React, { useState } from 'react';
+
+// Sample data generation functions
+const generateRandomName = () => {
+  const names = ['John', 'Jane', 'David', 'Sarah', 'Michael', 'Emily', 'James', 'Olivia', 'William', 'Emma'];
+  return names[Math.floor(Math.random() * names.length)];
+};
+
+const generateRandomEmployee = () => ({
+  사번: Math.floor(Math.random() * 10000) + 1000,
+  이름: generateRandomName(),
+  이메일: `${generateRandomName().toLowerCase()}@example.com`,
+  휴대폰번호: `010-${Math.floor(Math.random() * 10000)}-${Math.floor(Math.random() * 10000)}`
+});
+
+const generateEmployees = () => {
+  const employees = [];
+  for (let i = 0; i < 3; i++) {
+    employees.push(generateRandomEmployee());
+  }
+  return employees;
+};
+
+const generateDepartments = (depth, numDepartments) => {
+  if (depth === 0) return [];
+  const departments = [];
+  for (let i = 0; i < numDepartments; i++) {
+    const department = {
+      name: `Department ${i+1}`,
+      employees: generateEmployees(),
+      subDepartments: generateDepartments(depth - 1, numDepartments),
+      checked: false
+    };
+    departments.push(department);
+  }
+  return departments;
+};
+
+// Generating root node
+const rootDepartment = {
+  name: 'ROOT',
+  employees: generateEmployees(),
+  subDepartments: generateDepartments(3, 3),
+  checked: false
+};
+
+// Main App component
+const App = () => {
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+
+  const handleCheckboxChange = (department) => {
+    department.checked = !department.checked;
+    updateSubDepartmentsCheckStatus(department);
+
+    const selectedDepartments = getSelectedDepartments(rootDepartment);
+    const employees = getEmployeesFromDepartments(selectedDepartments);
+
+    setSelectedEmployees(employees);
+  };
+
+  const updateSubDepartmentsCheckStatus = (department) => {
+    department.subDepartments.forEach((subDepartment) => {
+      subDepartment.checked = department.checked;
+      updateSubDepartmentsCheckStatus(subDepartment);
+    });
+  };
+
+  const getSelectedDepartments = (department) => {
+    const selectedDepartments = [];
+    if (department.checked) {
+      selectedDepartments.push(department);
+    }
+    department.subDepartments.forEach((subDepartment) => {
+      selectedDepartments.push(...getSelectedDepartments(subDepartment));
+    });
+    return selectedDepartments;
+  };
+
+  const getEmployeesFromDepartments = (departments) => {
+    return departments.reduce((acc, curr) => {
+      acc.push(...curr.employees);
+      return acc;
+    }, []);
+  };
+
+  return (
+    <div>
+      <div style={{ float: 'left', width: '50%' }}>
+        <h2>조직도</h2>
+        <DepartmentTree
+          department={rootDepartment}
+          handleCheckboxChange={handleCheckboxChange}
+        />
+      </div>
+      <div style={{ float: 'right', width: '50%' }}>
+        <div>
+          <h2>선택된 부서들의 직원 목록</h2>
+          <EmployeeList employees={selectedEmployees} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Component for rendering department tree
+const DepartmentTree = ({ department, handleCheckboxChange }) => (
+  <ul>
+    <li style={{ fontWeight: department.checked ? 'bold' : 'normal' }}>
+      <input
+        type="checkbox"
+        checked={department.checked}
+        onChange={() => handleCheckboxChange(department)}
+      />
+      <span onClick={() => handleCheckboxChange(department)}>
+        {department.name} ({department.employees.length})
+      </span>
+      {department.subDepartments.length > 0 && (
+        <DepartmentTreeList
+          departments={department.subDepartments}
+          handleCheckboxChange={handleCheckboxChange}
+        />
+      )}
+    </li>
+  </ul>
+);
+
+// Component for rendering sub-departments
+const DepartmentTreeList = ({ departments, handleCheckboxChange }) => (
+  <ul>
+    {departments.map((department, index) => (
+      <li key={index}>
+        <input
+          type="checkbox"
+          checked={department.checked}
+          onChange={() => handleCheckboxChange(department)}
+        />
+        <span onClick={() => handleCheckboxChange(department)}>
+          {department.name} ({department.employees.length})
+        </span>
+        {department.subDepartments.length > 0 && (
+          <DepartmentTreeList
+            departments={department.subDepartments}
+            handleCheckboxChange={handleCheckboxChange}
+          />
+        )}
+      </li>
+    ))}
+  </ul>
+);
+
+// Component for rendering employee list
+const EmployeeList = ({ employees }) => (
+  <div>
+    <h2>직원 목록</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>순번</th>
+          <th>사번</th>
+          <th>이름</th>
+          <th>이메일</th>
+          <th>휴대폰번호</th>
+        </tr>
+      </thead>
+      <tbody>
+        {employees.map((employee, index) => (
+          <tr key={index}>
+            <td>{index + 1}</td>
+            <td>{employee['사번']}</td>
+            <td>{employee['이름']}</td>
+            <td>{employee['이메일']}</td>
+            <td>{employee['휴대폰번호']}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+export default App;
+
